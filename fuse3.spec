@@ -1,16 +1,28 @@
+#
+# FUSE 3.2 specfile for CentOS 7.5 (and probably more)
+# Originally from https://github.com/vmware/photon/
+# Build with --nocheck to bypass tests
+#
+%if 0%{?rhel}
+%{!?python3_pkgversion: %global python3_pkgversion 34}
+%else
+%{!?python3_pkgversion: %global python3_pkgversion 3}
+%endif
+%global python3_pkgprefix python%{python3_pkgversion}
+
+# Undefined in openSUSE
+%{!?__python3: %global __python3 python3}
+
 Summary:        File System in Userspace (FUSE) utilities
-Name:           fuse3
+Name:           fuse
 Version:        3.2.6
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        GPL+
 Url:            http://fuse.sourceforge.net/
 Group:          System Environment/Base
-Vendor:         VMware, Inc.
-Distribution:   Photon
 Source0:        https://github.com/libfuse/libfuse/archive/%{name}-%{version}.tar.gz
-%define sha1    fuse3=cd2e28231751d2854afdec9efc0380ef294efa3f
 BuildRequires:  meson >= 0.38.0
-BuildRequires:  python-pytest
+BuildRequires:  %{python3_pkgprefix}-pytest
 BuildRequires:  systemd-devel
 
 %description
@@ -21,32 +33,32 @@ userspace program.
 Summary:        Header and development files
 Group:          Development/Libraries
 Requires:       %{name} = %{version}
-Requires:	systemd-devel
+Requires:       systemd-devel
 
 %description    devel
 It contains the libraries and header files to create fuse applications.
 
 %prep
-%setup -q -n fuse3-%{version}
+%setup -q -n libfuse-%{name}-%{version}
 
 %build
 mkdir build &&
 cd    build &&
 meson --prefix=%{_prefix} .. &&
-ninja -C ./
+ninja-build -C ./
 
 %install
 cd build
-DESTDIR=%{buildroot}/ ninja -C ./ install
+DESTDIR=%{buildroot}/ ninja-build -C ./ install
 
-#%check
-#cd build
-#python3 -m pytest test/
+%check
+cd build
+%{__python3} -m pytest test/
 
 %files
 %defattr(-, root, root)
 %{_libdir}/libfuse3.so*
-/lib/udev/rules.d/*
+/usr/lib/udev/rules.d/*
 %{_bindir}/*
 %{_sysconfdir}/fuse*
 %{_datadir}/man/*
@@ -59,6 +71,8 @@ DESTDIR=%{buildroot}/ ninja -C ./ install
 %{_libdir}/libfuse3.so*
 
 %changelog
+*   Thu Nov 29 2018 Stephane Thiell <sthiell@stanford.edu> 3.2.6-2
+-   Made changes to build on CentOS 7.5
 *   Mon Sep 24 2018 Srinidhi Rao <srinidhir@vmware.com> 3.2.6-1
 -   Update to version 3.2.6.
 *   Wed Jul 05 2017 Xiaolin Li <xiaolinl@vmware.com> 3.0.1-2
